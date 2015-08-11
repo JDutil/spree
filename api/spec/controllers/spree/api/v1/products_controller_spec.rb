@@ -306,6 +306,20 @@ module Spree
           expect(json_response['shipping_category_id']).to eq shipping_id
         end
 
+        it "with invalid shipping_category_id in_stock remains false when updated to valid shipping_category_id" do
+          api_post :create, product: { name: "No QOH Product",
+                                       price: 19.99,
+                                       shipping_category_id: 0 }
+
+          expect(json_response['master']['in_stock']).to eq false
+          product =  Spree::Product.find_by_name('No QOH Product')
+          expect(product.master.total_on_hand).to eq 0
+
+          api_put :update, id: product.to_param, product: { shipping_category_id: create(:shipping_category).id }
+          expect(json_response['master']['in_stock']).to eq false
+          expect(product.reload.master.total_on_hand).to eq 0
+        end
+
         it "puts the created product in the given taxons" do
           product_data[:taxon_ids] = [taxon_1.id, taxon_2.id]
           api_post :create, product: product_data
